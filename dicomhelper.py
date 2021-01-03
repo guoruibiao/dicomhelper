@@ -68,6 +68,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.fanniming.clicked.connect(self._handle_fanniming)
         self.adddcm.clicked.connect(self._handle_add_dcmextension)
         self.deletedcm.clicked.connect(self._handle_delete_dcmextension)
+        self.doneclean.clicked.connect(self._handle_clean_donelistview)
+
+    def _handle_clean_donelistview(self):
+        self.donelist = []
+        self._update_listview()
 
     def _update_listview(self):
         self.undolist = list(set(self.undolist) - set(self.donelist))
@@ -294,6 +299,10 @@ class Main(QMainWindow, Ui_MainWindow):
             当前版本匿名化为对称加密算法的处理，一定要保管好加解密字符串，以防泄露或者用于后续反匿名化操作
             撤销.dcm 后缀的添加，只有上一个操作步骤为添加.dcm 后缀，且软件未关闭时有效
             
+        4）免责声明:
+            在使用本软件之前，请您备份好源数据文件，以免因程序故障造成不必要的损失。
+            因使用此软件造成的任何信息、版权问题均由操作者本人承担。
+            
             copyright@泰戈尔, 2021
         """
         QMessageBox.information(self, "关于", msg, QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
@@ -304,9 +313,9 @@ class Main(QMainWindow, Ui_MainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    iconPath = os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'dicomhelper.icns')
+    iconPath = os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'ICON.jpg')
     app.setWindowIcon(QIcon(iconPath))
     win = Main()
-    win.setWindowTitle("嘎嘣的DICOM小助手🍒")
+    win.setWindowTitle("DICOM匿名化小助手🔧")
     win.show()
     sys.exit(app.exec_())

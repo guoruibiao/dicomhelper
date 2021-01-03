@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/biao/PycharmProjects/dicomhelper/DicomHelper.ui'
+# Form implementation generated from reading ui file 'DicomHelper.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.2
 #
@@ -14,16 +14,20 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 644)
+        MainWindow.resize(800, 654)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(40, 200, 711, 391))
+        self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(40, 210, 711, 391))
         self.horizontalLayoutWidget_2.setObjectName("horizontalLayoutWidget_2")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_2)
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.listViewundo = QtWidgets.QListView(self.horizontalLayoutWidget_2)
+        self.listViewundo.setMouseTracking(True)
+        self.listViewundo.setTabletTracking(True)
+        self.listViewundo.setAcceptDrops(True)
+        self.listViewundo.setAutoFillBackground(True)
         self.listViewundo.setTabKeyNavigation(True)
         self.listViewundo.setDragEnabled(True)
         self.listViewundo.setDragDropOverwriteMode(True)
@@ -34,6 +38,14 @@ class Ui_MainWindow(object):
         self.listViewundo.setObjectName("listViewundo")
         self.horizontalLayout_2.addWidget(self.listViewundo)
         self.listViewdone = QtWidgets.QListView(self.horizontalLayoutWidget_2)
+        self.listViewdone.setMouseTracking(True)
+        self.listViewdone.setTabletTracking(True)
+        self.listViewdone.setAcceptDrops(True)
+        self.listViewdone.setAutoFillBackground(True)
+        self.listViewdone.setDragEnabled(True)
+        self.listViewdone.setDragDropOverwriteMode(True)
+        self.listViewdone.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.listViewdone.setResizeMode(QtWidgets.QListView.Fixed)
         self.listViewdone.setObjectName("listViewdone")
         self.horizontalLayout_2.addWidget(self.listViewdone)
         self.horizontalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
@@ -54,11 +66,14 @@ class Ui_MainWindow(object):
         self.niming = QtWidgets.QPushButton(self.horizontalLayoutWidget)
         self.niming.setObjectName("niming")
         self.horizontalLayout_3.addWidget(self.niming)
+        self.doneclean = QtWidgets.QPushButton(self.horizontalLayoutWidget)
+        self.doneclean.setObjectName("doneclean")
+        self.horizontalLayout_3.addWidget(self.doneclean)
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(190, 180, 60, 16))
+        self.label.setGeometry(QtCore.QRect(190, 190, 60, 16))
         self.label.setObjectName("label")
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(550, 180, 60, 16))
+        self.label_2.setGeometry(QtCore.QRect(550, 190, 60, 16))
         self.label_2.setObjectName("label_2")
         self.label_3 = QtWidgets.QLabel(self.centralwidget)
         self.label_3.setEnabled(True)
@@ -142,6 +157,7 @@ class Ui_MainWindow(object):
         self.deletedcm.setText(_translate("MainWindow", "撤销.dcm 后缀"))
         self.fanniming.setText(_translate("MainWindow", "反匿名化"))
         self.niming.setText(_translate("MainWindow", "匿名化"))
+        self.doneclean.setText(_translate("MainWindow", "清空已完成"))
         self.label.setText(_translate("MainWindow", "待处理"))
         self.label_2.setText(_translate("MainWindow", "已完成"))
         self.label_3.setText(_translate("MainWindow", "Dicom 匿名化、反匿名化工具 "))
