@@ -1,0 +1,312 @@
+import os
+import sys
+import pydicom
+from PyQt5.QtGui import QIcon, QCursor
+from PyQt5.QtCore import QEvent
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QInputDialog, QMessageBox
+from PyQt5.QtCore import QStringListModel, QPoint
+from ui import Ui_MainWindow
+from cipher import Cipher
+
+class Main(QMainWindow, Ui_MainWindow):
+    def __init__(self, *args, **kwargs):
+        super(Main, self).__init__(*args, **kwargs)
+        self.setupUi(self)
+        self._init_variables()
+        self._init_models()
+        self._bind_actions()
+
+
+    def _init_variables(self):
+        self.exclude_extensions = [
+            # 过滤某些特殊后缀的文件名
+            "py", "gz", "rar", "ini", "nii",
+        ]
+        self.exclude_filenames = [
+            ".DS_Store",
+            "VERSION",
+        ]
+        # 全局的一个秘钥串
+        self.secret_seed = ""
+        self.checksmap = {
+            "PatientID": False,
+            "PatientName": False,
+            "PatientBirthDate": False,
+            "PatientSex": False,
+            "InstitutionName": False,
+            # "PatientAddress": True,
+            # "PatientTelephoneNumbers": True,
+        }
+        self.PREFIX = "Anonymous_"
+        self.cipher = Cipher()
+        self.CIPHER_METHOD_ENCRYPT = "encrypt"
+        self.CIPHER_METHOD_DECRYPT = "decrypt"
+        self.DCM_EXTENSION = ".dcm"
+
+    # listview 中用到的俩模型
+    def _init_models(self):
+        self.undolist = []
+        self.donelist = []
+        self.undomodel = QStringListModel()
+        self.donemodel = QStringListModel()
+
+    def _bind_actions(self):
+        # 绑定文件选项
+        self.actionwenjian.triggered.connect(self._get_file_path)
+        self.actionwenjianjia.triggered.connect(self._get_folder_path)
+
+        # listview-model 的事件监听
+
+        # 绑定秘钥选取处理
+        self.actionmiyao.triggered.connect(self._get_secret_string)
+        # 绑定关于菜单
+        self.actionabout.triggered.connect(self._about)
+
+        # 绑定按钮事件
+        self.niming.clicked.connect(self._handle_niming)
+        self.fanniming.clicked.connect(self._handle_fanniming)
+        self.adddcm.clicked.connect(self._handle_add_dcmextension)
+        self.deletedcm.clicked.connect(self._handle_delete_dcmextension)
+
+    def _update_listview(self):
+        self.undolist = list(set(self.undolist) - set(self.donelist))
+        self.undomodel.setStringList(self.undolist)
+        self.listViewundo.setModel(self.undomodel)
+        self.donemodel.setStringList(self.donelist)
+        self.listViewdone.setModel(self.donemodel)
+
+    def _handle_add_dcmextension(self):
+        self.changed_filenames = []
+        for filename in self.undolist:
+            newname = filename + self.DCM_EXTENSION
+            try:
+                os.rename(filename, newname)
+            except:
+                continue
+            self.changed_filenames.append(newname)
+        succ = len(self.changed_filenames)
+        if succ == 0:
+            msg = "暂时没有文件要修改"
+        else:
+            msg = "成功修改了{}个文件！".format(succ)
+
+        # 更新 UI
+        self.undolist = list(set(self.undolist) - set(self.changed_filenames))
+        self.donelist = self.changed_filenames
+        self._update_listview()
+        self.statusbar.showMessage(msg)
+        QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+
+    def _handle_delete_dcmextension(self):
+        self.undolist = []
+        succ = 0
+        for filename in self.changed_filenames:
+            filename = str(filename)
+            if not filename.endswith(self.DCM_EXTENSION):
+                continue
+            newname = os.path.splitext(filename)[0]
+            try:
+                os.rename(filename, newname)
+            except:
+                continue
+            succ += 1
+        # 将改动展示到状态栏
+        if succ == 0:
+            msg = "暂时没有文件要撤销"
+        else:
+            msg = "成功撤销了{}个文件！".format(succ)
+        # 更新 UI
+        self.undolist = [item.strip(self.DCM_EXTENSION) for item in self.changed_filenames]
+        self.donelist = []
+        self._update_listview()
+        self.statusbar.showMessage(msg)
+        QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+
+
+    def _check_options(self):
+        if self.secret_seed == "":
+           QMessageBox.critical(self, "警告", "请先进行加解密秘钥的填写:\n 菜单栏->功能->秘钥", QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
+           return False
+        # 检查匿名化选项
+        checks = [
+            self.PatientID, self.PatientName, self.PatientBirthDate, self.PatientSex, self.InstitutionName,
+        ]
+        # check Checked
+        allUnChecked = True
+        for check in checks:
+            if check.isChecked():
+                allUnChecked = False
+                self.checksmap[check.objectName()] = True
+        print(self.checksmap)
+        if allUnChecked:
+            QMessageBox.critical(self, "警告", "请先进行匿名化选项的选择", QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
+            return False
+        # 初次校验通过
+        return True
+
+    # DICOM 文件匿名化处理，返回 True 或者 False，以便于后续追溯
+    def dcmrewrite(self, filename, method):
+        if method == "" or (not method in [self.CIPHER_METHOD_ENCRYPT, self.CIPHER_METHOD_DECRYPT]):
+            return False
+        try:
+            print("当前已选择 Options:", self.checksmap)
+            ds = pydicom.dcmread(filename)
+            print("handling: ", filename)
+            for key, need in self.checksmap.items():
+                if not need:
+                    continue
+
+                val = str(ds.data_element(key).value)
+                print("key={}, val={}, method={}".format(key, val, method))
+                # 对于匿名化处理过或者该项为空的，可以直接跳过
+                if val == "":
+                    continue
+                if method == self.CIPHER_METHOD_ENCRYPT:
+                    if val.startswith(self.PREFIX):
+                        continue
+                    val = self.PREFIX + self.cipher.encrypt(self.secret_seed, val)
+                elif method == self.CIPHER_METHOD_DECRYPT:
+
+                    if not val.startswith(self.PREFIX):
+                        continue
+                    val = self.cipher.decrypt(self.secret_seed, val).lstrip(self.PREFIX)
+                    print("decryptret=", val)
+                else:
+                    print("竟然走到了这里？")
+
+                ds.data_element(key).value = val
+                # print(ds.data_element(key))
+                ds.save_as(filename)
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+
+    def _handle_niming(self):
+        if not self._check_options():
+            return
+        if len(self.undolist) <= 0:
+            QMessageBox.information(self, "处理结果", "暂无要处理的数据", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            return
+        # 对待处理列表进行序列处理
+        print("secret_seed: ", self.secret_seed)
+        for filename in self.undolist:
+            # 匿名化信息读取
+            succ = self.dcmrewrite(filename, self.CIPHER_METHOD_ENCRYPT)
+            if succ:
+                self.donelist.append(filename)
+
+        # 更新 UI
+        self._update_listview()
+
+        msg = "成功处理: {}个，失败: {}个，如有错误请重试！".format(len(self.donelist), len(self.undolist))
+        QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        self.statusbar.showMessage(msg)
+
+    def _handle_fanniming(self):
+        QMessageBox.critical(self, "警告", "反匿名化有点问题，暂不提供服务", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        return
+        if not self._check_options():
+            return
+        # 对待处理列表进行序列处理
+        print("secret_seed: ", self.secret_seed)
+        for filename in self.undolist:
+            # 匿名化信息读取
+            ret = self.dcmrewrite(filename, self.CIPHER_METHOD_DECRYPT)
+            print("decrypt_ret=", ret)
+            self.donelist.append(filename)
+
+        # 更新 UI
+        self._update_listview()
+
+
+    def _get_file_path(self):
+        self.filenames = []
+        files, succ = QFileDialog.getOpenFileNames(self, "多文件选择", "~", "All Files (*);;Text Files (*.txt)")
+        if not succ:
+            self.statusbar.showMessage("文件路径选择失败，请重新选择")
+            return
+        self.undolist = files
+        # 将文件选中到展示区
+        self.undomodel.setStringList(self.undolist)
+        self.listViewundo.setModel(self.undomodel)
+
+    def _get_folder_path(self):
+        directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "~")
+        print(directory)
+        if not os.path.isdir(directory):
+            self.statusbar.showMessage("{} 不是合法文件夹".format(directory))
+            return
+        self._read_all_filenames(directory)
+
+        # 将 self.filenames全部追加到待处理区域
+        self.undolist = self.filenames
+        self.undomodel.setStringList(self.undolist)
+        self.listViewundo.setModel(self.undomodel)
+
+    def _read_all_filenames(self, path):
+        self.filenames = []
+        # 判断路径有效性
+        if not os.path.isdir(path):
+            self.statusbar.showMessage("当前路径：{} 不合法，请重新选择".format(path))
+            return
+        for root, dir, files in os.walk(path):
+            for file in files:
+                print(file)
+                filename = str(os.path.join(root, file))
+                if os.path.isfile(filename) == False:
+                    continue
+                if file in self.exclude_filenames:
+                    continue
+                # 判断是否有拓展名，对有拓展名的进行特殊过滤
+                if "." in str(file):
+                    row = str(file).split(".")
+                    if len(row) >= 1 and row[-1] in self.exclude_extensions:
+                        continue
+                # 加入待更换列表
+                self.filenames.append(filename)
+        # 将扫描到的文件内容显示到状态栏
+        self.statusbar.showMessage("当前目录扫描到{}个文件！".format(len(self.filenames)))
+
+    def _get_secret_string(self):
+        text, ok = QInputDialog.getText(self, "秘钥选择", "请输入匿名化/反匿名化用到的加密字符串")
+        if ok:
+            self.secret_seed = text
+        else:
+            self.statusbar.showMessage("匿名化/反匿名化操作之前需设置加解密秘钥串")
+        print(text, ok)
+
+    def _about(self):
+        msg = """
+        使用说明书:
+        
+        1) .dcm后缀添加与撤销:
+            添加步骤：菜单->选择文件/文件夹->添加.dcm后缀
+            撤销步骤：添加结束后未关闭此软件时，可有一次撤销处理
+        
+        2) 匿名化与反匿名化处理:
+            匿名化：菜单->秘钥->输入自定义加密字符串->主页面->选择匿名处理项->点击匿名按钮
+            反匿名化: 解密编码部分有问题，当前版本暂不支持
+            
+        3）注意：
+            当前版本匿名化为对称加密算法的处理，一定要保管好加解密字符串，以防泄露或者用于后续反匿名化操作
+            撤销.dcm 后缀的添加，只有上一个操作步骤为添加.dcm 后缀，且软件未关闭时有效
+            
+            copyright@泰戈尔, 2021
+        """
+        QMessageBox.information(self, "关于", msg, QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
+
+
+
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    iconPath = os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'dicomhelper.icns')
+    app.setWindowIcon(QIcon(iconPath))
+    win = Main()
+    win.setWindowTitle("嘎嘣的DICOM小助手🍒")
+    win.show()
+    sys.exit(app.exec_())
