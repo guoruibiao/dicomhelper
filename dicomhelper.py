@@ -42,7 +42,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.cipher = Cipher()
         self.CIPHER_METHOD_ENCRYPT = "encrypt"
         self.CIPHER_METHOD_DECRYPT = "decrypt"
+        self.CIPHER_METHOD_CUSTOM  = "custom"
         self.DCM_EXTENSION = ".dcm"
+        self.CUSTOM_SUFFIX = ""
+        self.CHECK_OPTION_SOURCE_CUSTOM = "custom"
+        self.CHECK_OPTION_SOURCE_COMMON = "common"
 
     # listview 中用到的俩模型
     def _init_models(self):
@@ -65,7 +69,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
         # 绑定按钮事件
         self.niming.clicked.connect(self._handle_niming)
-        self.fanniming.clicked.connect(self._handle_fanniming)
+        self.customniminghua.clicked.connect(self._handle_customniming)
         self.adddcm.clicked.connect(self._handle_add_dcmextension)
         self.deletedcm.clicked.connect(self._handle_delete_dcmextension)
         self.doneclean.clicked.connect(self._handle_clean_donelistview)
@@ -129,8 +133,8 @@ class Main(QMainWindow, Ui_MainWindow):
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
 
 
-    def _check_options(self):
-        if self.secret_seed == "":
+    def _check_options(self, source):
+        if self.secret_seed == "" and source == self.CHECK_OPTION_SOURCE_COMMON:
            QMessageBox.critical(self, "警告", "请先进行加解密秘钥的填写:\n 菜单栏->功能->秘钥", QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
            return False
         # 检查匿名化选项
@@ -152,7 +156,9 @@ class Main(QMainWindow, Ui_MainWindow):
 
     # DICOM 文件匿名化处理，返回 True 或者 False，以便于后续追溯
     def dcmrewrite(self, filename, method):
-        if method == "" or (not method in [self.CIPHER_METHOD_ENCRYPT, self.CIPHER_METHOD_DECRYPT]):
+        if method == "" or (not method in [
+            self.CIPHER_METHOD_ENCRYPT, self.CIPHER_METHOD_DECRYPT, self.CIPHER_METHOD_CUSTOM
+        ]):
             return False
         try:
             print("当前已选择 Options:", self.checksmap)
@@ -176,7 +182,8 @@ class Main(QMainWindow, Ui_MainWindow):
                     if not val.startswith(self.PREFIX):
                         continue
                     val = self.cipher.decrypt(self.secret_seed, val).lstrip(self.PREFIX)
-                    print("decryptret=", val)
+                elif method == self.CIPHER_METHOD_CUSTOM:
+                    val = "{}{}".format(self.PREFIX, self.CUSTOM_SUFFIX)
                 else:
                     print("竟然走到了这里？")
 
@@ -190,7 +197,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
 
     def _handle_niming(self):
-        if not self._check_options():
+        if not self._check_options(self.CHECK_OPTION_SOURCE_COMMON):
             return
         if len(self.undolist) <= 0:
             QMessageBox.information(self, "处理结果", "暂无要处理的数据", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
@@ -210,16 +217,16 @@ class Main(QMainWindow, Ui_MainWindow):
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusbar.showMessage(msg)
 
-    def _handle_fanniming(self):
-        QMessageBox.critical(self, "警告", "反匿名化有点问题，暂不提供服务", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-        return
-        if not self._check_options():
+    def _handle_customniming(self):
+        text, ok = QInputDialog.getText(self, "自定义匿名化后缀", "请输入自定义的匿名化后缀，如:\n 1、abc 等\n 为空则随机生成后缀。\n")
+        if ok:
+            self.CUSTOM_SUFFIX = text
+        if not self._check_options(self.CHECK_OPTION_SOURCE_CUSTOM):
             return
         # 对待处理列表进行序列处理
-        print("secret_seed: ", self.secret_seed)
         for filename in self.undolist:
             # 匿名化信息读取
-            ret = self.dcmrewrite(filename, self.CIPHER_METHOD_DECRYPT)
+            ret = self.dcmrewrite(filename, self.CIPHER_METHOD_CUSTOM)
             print("decrypt_ret=", ret)
             self.donelist.append(filename)
 

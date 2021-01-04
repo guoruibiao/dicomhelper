@@ -8,6 +8,7 @@ ds = pydicom.dcmread(filepath)
 
 metas = [
     "PatientID","PatientName","PatientBirthDate","PatientSex","InstitutionName",
+    "PatientStatus", "PatientWeight", "ContrastBolusAgent", "StudyDescription",
 ]
 
 for meta in metas:

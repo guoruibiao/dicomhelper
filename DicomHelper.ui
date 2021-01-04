@@ -116,9 +116,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="fanniming">
+      <widget class="QPushButton" name="customniminghua">
        <property name="text">
-        <string>反匿名化</string>
+        <string>自定义匿名化</string>
        </property>
       </widget>
      </item>

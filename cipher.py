@@ -1,5 +1,8 @@
 # coding: utf8
+import time
+import random
 import base64
+import hashlib
 
 class Cipher(object):
 
@@ -20,6 +23,14 @@ class Cipher(object):
         ret = base64.b64decode(ret).decode('utf8', 'replace').lstrip((key+self.SEPARATOR))
         return ret
 
+    def md5(self, origin):
+        if origin == "":
+            origin = random.shuffle(list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))[0:10]
+        origin = origin.encode("utf8")
+        md5 = hashlib.md5()
+        md5.update(origin)
+        return md5.hexdigest()
+
 
 if __name__ == '__main__':
     origin = "Anonymous_'Jp4CU8A2MqA5NDpbMA##'"
@@ -30,3 +41,4 @@ if __name__ == '__main__':
     # print("================")
     ret = cipher.decrypt(key, origin)
     print(ret)
+    print(cipher.md5("ABC"))
