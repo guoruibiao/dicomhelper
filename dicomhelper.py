@@ -287,7 +287,7 @@ class Main(QMainWindow, Ui_MainWindow):
         if ok:
             self.secret_seed = text
         else:
-            self.statusbar.showMessage("匿名化/反匿名化操作之前需设置加解密秘钥串")
+            self.statusbar.showMessage("匿名化操作之前需设置加密秘钥串")
         print(text, ok)
 
     def _about(self):
@@ -298,9 +298,9 @@ class Main(QMainWindow, Ui_MainWindow):
             添加步骤：菜单->选择文件/文件夹->添加.dcm后缀
             撤销步骤：添加结束后未关闭此软件时，可有一次撤销处理
         
-        2) 匿名化与反匿名化处理:
+        2) 匿名化与自定义匿名化处理:
             匿名化：菜单->秘钥->输入自定义加密字符串->主页面->选择匿名处理项->点击匿名按钮
-            反匿名化: 解密编码部分有问题，当前版本暂不支持
+            自定义匿名化: 支持自定义匿名化后缀，未选择时则随机生成后缀，如：Anonymous_xxx
             
         3）注意：
             当前版本匿名化为对称加密算法的处理，一定要保管好加解密字符串，以防泄露或者用于后续反匿名化操作
@@ -310,7 +310,7 @@ class Main(QMainWindow, Ui_MainWindow):
             在使用本软件之前，请您备份好源数据文件，以免因程序故障造成不必要的损失。
             因使用此软件造成的任何信息、版权问题均由操作者本人承担。
             
-            copyright@泰戈尔, 2021
+            copyright@2021, 泰戈尔
         """
         QMessageBox.information(self, "关于", msg, QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
 
