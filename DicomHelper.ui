@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>654</height>
+    <height>686</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>40</x>
-      <y>210</y>
+      <y>240</y>
       <width>711</width>
       <height>391</height>
      </rect>
@@ -142,7 +142,7 @@
     <property name="geometry">
      <rect>
       <x>190</x>
-      <y>190</y>
+      <y>220</y>
       <width>60</width>
       <height>16</height>
      </rect>
@@ -155,7 +155,7 @@
     <property name="geometry">
      <rect>
       <x>550</x>
-      <y>190</y>
+      <y>220</y>
       <width>60</width>
       <height>16</height>
      </rect>
@@ -195,58 +195,28 @@
       <x>30</x>
       <y>90</y>
       <width>731</width>
-      <height>91</height>
+      <height>131</height>
      </rect>
     </property>
     <property name="title">
      <string>匿名化选项</string>
     </property>
-    <widget class="QWidget" name="horizontalLayoutWidget_3">
+    <widget class="QLabel" name="label_4">
      <property name="geometry">
       <rect>
-       <x>0</x>
-       <y>20</y>
-       <width>721</width>
-       <height>61</height>
+       <x>10</x>
+       <y>30</y>
+       <width>711</width>
+       <height>91</height>
       </rect>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <item>
-       <widget class="QCheckBox" name="PatientID">
-        <property name="text">
-         <string>患者ID</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="PatientName">
-        <property name="text">
-         <string>患者姓名</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="PatientBirthDate">
-        <property name="text">
-         <string>患者出生日期</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="PatientSex">
-        <property name="text">
-         <string>患者性别</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="InstitutionName">
-        <property name="text">
-         <string>医院机构</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="text">
+      <string>主要匿名处理为患者信息，机构信息以及症状信息,具体如下:
+# 机构信息:InstitutionName
+# 患者信息: PatientName,PatientID,IssuerOfPatientID,PatientBirthDate,PatientSex,OtherPatientIDs,PatientAge,
+PatientSize,PatientWeight,AdditionalPatientHistory
+# 症状描述: ContrastBolusAgent,BodyPartExamined</string>
+     </property>
     </widget>
    </widget>
   </widget>

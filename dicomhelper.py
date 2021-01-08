@@ -47,6 +47,15 @@ class Main(QMainWindow, Ui_MainWindow):
         self.CUSTOM_SUFFIX = ""
         self.CHECK_OPTION_SOURCE_CUSTOM = "custom"
         self.CHECK_OPTION_SOURCE_COMMON = "common"
+        self.keyProperties = [
+            # 机构信息
+            "InstitutionName",
+            # 患者信息
+            "PatientName", "PatientID", "IssuerOfPatientID", "PatientBirthDate", "PatientSex", "OtherPatientIDs",
+            "PatientAge", "PatientSize", "PatientWeight", "AdditionalPatientHistory",
+            # 症状描述
+            "ContrastBolusAgent", "BodyPartExamined",
+        ]
 
     # listview 中用到的俩模型
     def _init_models(self):
@@ -137,6 +146,10 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.secret_seed == "" and source == self.CHECK_OPTION_SOURCE_COMMON:
            QMessageBox.critical(self, "警告", "请先进行加解密秘钥的填写:\n 菜单栏->功能->秘钥", QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
            return False
+        return True
+        ######
+        # 暂以名单机制进行匿名化，不提供可选项。
+        ######
         # 检查匿名化选项
         checks = [
             self.PatientID, self.PatientName, self.PatientBirthDate, self.PatientSex, self.InstitutionName,
@@ -164,9 +177,7 @@ class Main(QMainWindow, Ui_MainWindow):
             print("当前已选择 Options:", self.checksmap)
             ds = pydicom.dcmread(filename)
             print("handling: ", filename)
-            for key, need in self.checksmap.items():
-                if not need:
-                    continue
+            for key in self.keyProperties:
 
                 val = str(ds.data_element(key).value)
                 print("key={}, val={}, method={}".format(key, val, method))
