@@ -215,16 +215,18 @@ class Main(QMainWindow, Ui_MainWindow):
             return
         # 对待处理列表进行序列处理
         print("secret_seed: ", self.secret_seed)
+        succNum = 0
         for filename in self.undolist:
             # 匿名化信息读取
             succ = self.dcmrewrite(filename, self.CIPHER_METHOD_ENCRYPT)
             if succ:
                 self.donelist.append(filename)
+                succNum += 1
 
         # 更新 UI
         self._update_listview()
 
-        msg = "成功处理: {}个，失败: {}个，如有错误请重试！".format(len(self.donelist), len(self.undolist))
+        msg = "【匿名化】成功处理: {}个，失败: {}个，如有错误请重试！".format(succNum, len(self.undolist))
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusbar.showMessage(msg)
 
@@ -235,14 +237,20 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self._check_options(self.CHECK_OPTION_SOURCE_CUSTOM):
             return
         # 对待处理列表进行序列处理
+        succNum = 0
         for filename in self.undolist:
             # 匿名化信息读取
             ret = self.dcmrewrite(filename, self.CIPHER_METHOD_CUSTOM)
             print("decrypt_ret=", ret)
-            self.donelist.append(filename)
+            if ret:
+                self.donelist.append(filename)
+                succNum += 1
 
         # 更新 UI
         self._update_listview()
+        msg = "【自定义匿名化】成功处理: {}个，失败: {}个，如有错误请重试！".format(succNum, len(self.undolist))
+        QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        self.statusbar.showMessage(msg)
 
 
     def _get_file_path(self):
@@ -256,12 +264,19 @@ class Main(QMainWindow, Ui_MainWindow):
         self.undomodel.setStringList(self.undolist)
         self.listViewundo.setModel(self.undomodel)
 
+    def _reset_variables(self):
+        self.undolist  = []
+        self.donelist  = []
+        self.filenames = []
+
     def _get_folder_path(self):
         directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "~")
         print(directory)
         if not os.path.isdir(directory):
             self.statusbar.showMessage("{} 不是合法文件夹".format(directory))
             return
+        # 重置文件夹信息
+        self._reset_variables()
         self._read_all_filenames(directory)
 
         # 将 self.filenames全部追加到待处理区域
