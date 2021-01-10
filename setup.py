@@ -9,7 +9,7 @@ from setuptools import setup
 APP = ['dicomhelper.py']
 DATA_FILES = []
 OPTIONS = {
-    "iconfile": "ICON.jpg",
+    "iconfile": "gastric.icns",
 }
 
 setup(

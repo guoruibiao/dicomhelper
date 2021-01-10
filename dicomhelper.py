@@ -185,9 +185,8 @@ class Main(QMainWindow, Ui_MainWindow):
                 if val == "":
                     continue
                 if method == self.CIPHER_METHOD_ENCRYPT:
-                    if val.startswith(self.PREFIX):
-                        continue
-                    val = self.PREFIX + self.cipher.encrypt(self.secret_seed, val)
+                    if not val.startswith(self.PREFIX):
+                        val = self.PREFIX + self.cipher.encrypt(self.secret_seed, val)
                 elif method == self.CIPHER_METHOD_DECRYPT:
 
                     if not val.startswith(self.PREFIX):
@@ -346,7 +345,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    iconPath = os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'ICON.jpg')
+    iconPath = os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'gastric.icns')
     app.setWindowIcon(QIcon(iconPath))
     win = Main()
     win.setWindowTitle("DICOM匿名化小助手🔧")
