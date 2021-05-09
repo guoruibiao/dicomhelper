@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>686</height>
+    <height>660</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -240,6 +240,7 @@ PatientSize,PatientWeight,AdditionalPatientHistory
     <addaction name="separator"/>
     <addaction name="actionmiyao"/>
     <addaction name="separator"/>
+    <addaction name="actionfoldersplit"/>
     <addaction name="separator"/>
     <addaction name="actionabout"/>
    </widget>
@@ -299,6 +300,11 @@ PatientSize,PatientWeight,AdditionalPatientHistory
   <action name="actionabout">
    <property name="text">
     <string>关于</string>
+   </property>
+  </action>
+  <action name="actionfoldersplit">
+   <property name="text">
+    <string>文件夹切割</string>
    </property>
   </action>
  </widget>

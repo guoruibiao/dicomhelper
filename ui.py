@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 686)
+        MainWindow.resize(800, 660)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
@@ -118,6 +118,8 @@ class Ui_MainWindow(object):
         self.actionsc.setObjectName("actionsc")
         self.actionabout = QtWidgets.QAction(MainWindow)
         self.actionabout.setObjectName("actionabout")
+        self.actionfoldersplit = QtWidgets.QAction(MainWindow)
+        self.actionfoldersplit.setObjectName("actionfoldersplit")
         self.menu.addAction(self.actionwenjian)
         self.menu.addSeparator()
         self.menu.addAction(self.actionwenjianjia)
@@ -125,6 +127,7 @@ class Ui_MainWindow(object):
         self.menu.addSeparator()
         self.menu.addAction(self.actionmiyao)
         self.menu.addSeparator()
+        self.menu.addAction(self.actionfoldersplit)
         self.menu.addSeparator()
         self.menu.addAction(self.actionabout)
         self.menubar.addAction(self.menu.menuAction())
@@ -158,3 +161,4 @@ class Ui_MainWindow(object):
         self.actiontianjia.setText(_translate("MainWindow", "添加"))
         self.actionsc.setText(_translate("MainWindow", "删除"))
         self.actionabout.setText(_translate("MainWindow", "关于"))
+        self.actionfoldersplit.setText(_translate("MainWindow", "文件夹切割"))

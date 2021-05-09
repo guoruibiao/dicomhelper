@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import pydicom
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5.QtCore import QEvent
@@ -9,6 +10,7 @@ from PyQt5.QtCore import QStringListModel, QPoint
 from ui import Ui_MainWindow
 from cipher import Cipher
 
+
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super(Main, self).__init__(*args, **kwargs)
@@ -16,7 +18,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self._init_variables()
         self._init_models()
         self._bind_actions()
-
 
     def _init_variables(self):
         self.exclude_extensions = [
@@ -42,7 +43,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.cipher = Cipher()
         self.CIPHER_METHOD_ENCRYPT = "encrypt"
         self.CIPHER_METHOD_DECRYPT = "decrypt"
-        self.CIPHER_METHOD_CUSTOM  = "custom"
+        self.CIPHER_METHOD_CUSTOM = "custom"
         self.DCM_EXTENSION = ".dcm"
         self.CUSTOM_SUFFIX = ""
         self.CHECK_OPTION_SOURCE_CUSTOM = "custom"
@@ -75,6 +76,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.actionmiyao.triggered.connect(self._get_secret_string)
         # 绑定关于菜单
         self.actionabout.triggered.connect(self._about)
+
+        # 绑定文件夹切割窗口
+        self.actionfoldersplit.triggered.connect(self._file_split)
 
         # 绑定按钮事件
         self.niming.clicked.connect(self._handle_niming)
@@ -141,11 +145,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.statusbar.showMessage(msg)
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
 
-
     def _check_options(self, source):
         if self.secret_seed == "" and source == self.CHECK_OPTION_SOURCE_COMMON:
-           QMessageBox.critical(self, "警告", "请先进行加解密秘钥的填写:\n 菜单栏->功能->秘钥", QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
-           return False
+            QMessageBox.critical(self, "警告", "请先进行加解密秘钥的填写:\n 菜单栏->功能->秘钥", QMessageBox.Yes | QMessageBox.No,
+                                 QMessageBox.Yes)
+            return False
         return True
         ######
         # 暂以名单机制进行匿名化，不提供可选项。
@@ -162,7 +166,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 self.checksmap[check.objectName()] = True
         print(self.checksmap)
         if allUnChecked:
-            QMessageBox.critical(self, "警告", "请先进行匿名化选项的选择", QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
+            QMessageBox.critical(self, "警告", "请先进行匿名化选项的选择", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             return False
         # 初次校验通过
         return True
@@ -202,9 +206,8 @@ class Main(QMainWindow, Ui_MainWindow):
                 ds.save_as(filename)
         except Exception as e:
             print(e)
-            return False
+            return True
         return True
-
 
     def _handle_niming(self):
         if not self._check_options(self.CHECK_OPTION_SOURCE_COMMON):
@@ -212,6 +215,7 @@ class Main(QMainWindow, Ui_MainWindow):
         if len(self.undolist) <= 0:
             QMessageBox.information(self, "处理结果", "暂无要处理的数据", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             return
+        total = len(self.undolist)
         # 对待处理列表进行序列处理
         print("secret_seed: ", self.secret_seed)
         succNum = 0
@@ -225,7 +229,7 @@ class Main(QMainWindow, Ui_MainWindow):
         # 更新 UI
         self._update_listview()
 
-        msg = "【匿名化】成功处理: {}个，失败: {}个，如有错误请重试！".format(succNum, len(self.undolist))
+        msg = "【匿名化】共扫描到: {}个，成功处理: {}个，如有错误请重试！".format(total, succNum)
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusbar.showMessage(msg)
 
@@ -251,7 +255,6 @@ class Main(QMainWindow, Ui_MainWindow):
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusbar.showMessage(msg)
 
-
     def _get_file_path(self):
         self.filenames = []
         files, succ = QFileDialog.getOpenFileNames(self, "多文件选择", "~", "All Files (*);;Text Files (*.txt)")
@@ -264,8 +267,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.listViewundo.setModel(self.undomodel)
 
     def _reset_variables(self):
-        self.undolist  = []
-        self.donelist  = []
+        self.undolist = []
+        self.donelist = []
         self.filenames = []
 
     def _get_folder_path(self):
@@ -337,8 +340,56 @@ class Main(QMainWindow, Ui_MainWindow):
             
             copyright@2021, 泰戈尔
         """
-        QMessageBox.information(self, "关于", msg, QMessageBox.Yes|QMessageBox.No, QMessageBox.Yes)
+        QMessageBox.information(self, "关于", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
 
+    def _file_split(self):
+        root = os.path.expanduser("~")
+        # 选择文件夹
+        dirchoose = QFileDialog.getExistingDirectory(self, "选择文件夹", root)
+        if dirchoose == "":
+            self.statusbar.showMessage("文件路径选择失败，请重新选择")
+            return
+        # 对页内的文件进行过滤处理
+        files = [item for item in os.listdir(dirchoose) if item not in self.exclude_filenames]
+        self.statusbar.showMessage("当前选择路径为：{}, 文件数量：{}".format(dirchoose, len(files)))
+
+        # 获取每页数量
+        sub_count = 0
+        text, ok = QInputDialog.getText(self, "切割因子", "请输入每个子目录包含的文件数")
+        if ok and str(text).isdigit():
+            sub_count = int(text)
+        if sub_count == 0:
+            self.statusbar.showMessage("必须设置下切割因子的大小，每页数量应大于 0且为数值类型！")
+            return
+
+
+        self.statusbar.showMessage("目录[{}] 包含{}个文件！".format(dirchoose, len(files)))
+        if len(files) <= 0:
+            self.statusbar.showMessage("所选文件夹下文件为空，不是目标文件夹")
+            return
+        if len(files) % sub_count != 0:
+            self.statusbar.showMessage("切割因子非法，切割因子应为文件夹下总文件的除数。[切割因子/总文件数={}/{}]".format(len(files), sub_count))
+            return
+        self.statusbar.showMessage("当前选择 [切割因子/总文件数={}/{}]".format(len(files), sub_count))
+
+        # 执行文件夹分类
+        # 创建子文件夹，并执行复制操作
+        for index in range(1, int(len(files)/sub_count)+1):
+            subfolder = "{}/{}".format(dirchoose, index)
+            if not os.path.exists(subfolder):
+                os.makedirs(subfolder)
+            # 迁移文件到新文件夹下
+            start = sub_count * (index -1)
+            end = start + sub_count
+            print("start={}, end={}".format(start, end))
+            for file in files[start:end]:
+                oldfilename = "{}/{}".format(dirchoose, file)
+                newfilename = "{}/{}".format(subfolder, file)
+                shutil.copy(oldfilename, newfilename)
+        # 提示已完成
+        msg = "所选文件夹已切割为{}份，每页切割数量为{}个".format(int(len(files)/sub_count), sub_count)
+        self.statusbar.showMessage(msg)
+        QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
 
 
 
