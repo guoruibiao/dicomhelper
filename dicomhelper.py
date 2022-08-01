@@ -100,13 +100,17 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def _handle_add_dcmextension(self):
         self.changed_filenames = []
+        process_idx, total = 0, len(self.undolist)
         for filename in self.undolist:
+            process_idx += 1
             newname = filename + self.DCM_EXTENSION
             try:
                 os.rename(filename, newname)
             except:
                 continue
             self.changed_filenames.append(newname)
+            process_msg = "【添加 .dcm 后缀】进度：{}/{}".format(process_idx, total)
+            self.statusbar.showMessage(process_msg)
         succ = len(self.changed_filenames)
         if succ == 0:
             msg = "暂时没有文件要修改"
@@ -218,18 +222,22 @@ class Main(QMainWindow, Ui_MainWindow):
         total = len(self.undolist)
         # 对待处理列表进行序列处理
         print("secret_seed: ", self.secret_seed)
-        succNum = 0
+        succ_num, process_idx = 0, 0
         for filename in self.undolist:
             # 匿名化信息读取
             succ = self.dcmrewrite(filename, self.CIPHER_METHOD_ENCRYPT)
             if succ:
                 self.donelist.append(filename)
-                succNum += 1
+                succ_num += 1
+            # 给匿名化增加进度提示
+            process_idx += 1
+            process_msg = "【匿名化】进度：{}/{}".format(process_idx, total)
+            self.statusbar.showMessage(process_msg)
 
         # 更新 UI
         self._update_listview()
 
-        msg = "【匿名化】共扫描到: {}个，成功处理: {}个，如有错误请重试！".format(total, succNum)
+        msg = "【匿名化】共扫描到: {}个，成功处理: {}个，如有错误请重试！".format(total, succ_num)
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusbar.showMessage(msg)
 
@@ -240,18 +248,23 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self._check_options(self.CHECK_OPTION_SOURCE_CUSTOM):
             return
         # 对待处理列表进行序列处理
-        succNum = 0
+        total = len(self.undolist)
+        succ_num, process_idx = 0, 0
         for filename in self.undolist:
             # 匿名化信息读取
             ret = self.dcmrewrite(filename, self.CIPHER_METHOD_CUSTOM)
             print("decrypt_ret=", ret)
             if ret:
                 self.donelist.append(filename)
-                succNum += 1
+                succ_num += 1
+            # 添加匿名化后缀进度提示
+            process_idx += 1
+            process_msg = "【自定义匿名化】进度：{}/{}".format(process_idx, total)
+            self.statusbar.showMessage(process_msg)
 
         # 更新 UI
         self._update_listview()
-        msg = "【自定义匿名化】成功处理: {}个，失败: {}个，如有错误请重试！".format(succNum, len(self.undolist))
+        msg = "【自定义匿名化】成功处理: {}个，失败: {}个，如有错误请重试！".format(succ_num, len(self.undolist))
         QMessageBox.information(self, "处理结果", msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         self.statusbar.showMessage(msg)
 
